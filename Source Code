@@ -1,0 +1,478 @@
+-- Robo Money GUI - Full Draggable Script with Speed GUI
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local UIS = game:GetService("UserInputService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local VIM = game:GetService("VirtualInputManager")
+
+-- Formatting functions
+local function formatNumber(n)
+    return tostring(math.floor(n)):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+end
+
+local function formatTime(seconds)
+    local minutes = math.floor(seconds / 60)
+    local remainingSeconds = math.floor(seconds % 60)
+    return string.format("%d Minutes And %d Seconds", minutes, remainingSeconds)
+end
+
+-- Create GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MoneyFarmGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 760)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -380)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MainFrame.Parent = ScreenGui
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Text = "ROBO MONEY"
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Title.Parent = MainFrame
+
+-- Start/Stop Buttons
+local StartButton = Instance.new("TextButton")
+StartButton.Name = "StartButton"
+StartButton.Text = "START"
+StartButton.Size = UDim2.new(0.9, 0, 0, 35)
+StartButton.Position = UDim2.new(0.05, 0, 0.13, 0)
+StartButton.Font = Enum.Font.GothamBold
+StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+StartButton.Parent = MainFrame
+
+local StopButton = Instance.new("TextButton")
+StopButton.Name = "StopButton"
+StopButton.Text = "STOP"
+StopButton.Size = UDim2.new(0.9, 0, 0, 35)
+StopButton.Position = UDim2.new(0.05, 0, 0.21, 0)
+StopButton.Font = Enum.Font.GothamBold
+StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StopButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+StopButton.Parent = MainFrame
+
+-- Status
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name = "Status"
+StatusLabel.Text = "STATUS: READY"
+StatusLabel.Size = UDim2.new(0.9, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0.05, 0, 0.28, 0)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Parent = MainFrame
+
+-- Money counters
+local RemoteMoneyLabel = Instance.new("TextLabel")
+RemoteMoneyLabel.Name = "RemoteMoneyCounter"
+RemoteMoneyLabel.Text = "MONEY FROM REMOTES: $0"
+RemoteMoneyLabel.Size = UDim2.new(0.9, 0, 0, 20)
+RemoteMoneyLabel.Position = UDim2.new(0.05, 0, 0.32, 0)
+RemoteMoneyLabel.Font = Enum.Font.Gotham
+RemoteMoneyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RemoteMoneyLabel.BackgroundTransparency = 1
+RemoteMoneyLabel.Parent = MainFrame
+
+local AutofarmMoneyLabel = Instance.new("TextLabel")
+AutofarmMoneyLabel.Name = "AutofarmMoneyCounter"
+AutofarmMoneyLabel.Text = "MONEY FROM AUTOFARM: $0"
+AutofarmMoneyLabel.Size = UDim2.new(0.9, 0, 0, 20)
+AutofarmMoneyLabel.Position = UDim2.new(0.05, 0, 0.36, 0)
+AutofarmMoneyLabel.Font = Enum.Font.Gotham
+AutofarmMoneyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutofarmMoneyLabel.BackgroundTransparency = 1
+AutofarmMoneyLabel.Parent = MainFrame
+
+local TotalMoneyLabel = Instance.new("TextLabel")
+TotalMoneyLabel.Name = "TotalMoneyCounter"
+TotalMoneyLabel.Text = "TOTAL MONEY EARNED: $0"
+TotalMoneyLabel.Size = UDim2.new(0.9, 0, 0, 25)
+TotalMoneyLabel.Position = UDim2.new(0.05, 0, 0.4, 0)
+TotalMoneyLabel.Font = Enum.Font.GothamBold
+TotalMoneyLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+TotalMoneyLabel.BackgroundTransparency = 1
+TotalMoneyLabel.Parent = MainFrame
+
+-- Timer
+local TimeLabel = Instance.new("TextLabel")
+TimeLabel.Name = "TimeLabel"
+TimeLabel.Text = "TIME USING SCRIPT: 0 Minutes And 0 Seconds"
+TimeLabel.Size = UDim2.new(0.9, 0, 0, 25)
+TimeLabel.Position = UDim2.new(0.05, 0, 0.45, 0)
+TimeLabel.Font = Enum.Font.Gotham
+TimeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TimeLabel.BackgroundTransparency = 1
+TimeLabel.Parent = MainFrame
+
+-- Weapons
+local WeaponLabel = Instance.new("TextLabel")
+WeaponLabel.Name = "WeaponLabel"
+WeaponLabel.Text = "WEAPONS:"
+WeaponLabel.Size = UDim2.new(0.9, 0, 0, 20)
+WeaponLabel.Position = UDim2.new(0.05, 0, 0.5, 0)
+WeaponLabel.Font = Enum.Font.GothamBold
+WeaponLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+WeaponLabel.BackgroundTransparency = 1
+WeaponLabel.TextXAlignment = Enum.TextXAlignment.Left
+WeaponLabel.Parent = MainFrame
+
+local GlockButton = Instance.new("TextButton")
+GlockButton.Name = "GlockButton"
+GlockButton.Text = "SPAWN GLOCK 23"
+GlockButton.Size = UDim2.new(0.9, 0, 0, 30)
+GlockButton.Position = UDim2.new(0.05, 0, 0.54, 0)
+GlockButton.Font = Enum.Font.Gotham
+GlockButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+GlockButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+GlockButton.Parent = MainFrame
+
+local ARPButton = Instance.new("TextButton")
+ARPButton.Name = "ARPButton"
+ARPButton.Text = "SPAWN MICRO ARP"
+ARPButton.Size = UDim2.new(0.9, 0, 0, 30)
+ARPButton.Position = UDim2.new(0.05, 0, 0.59, 0)
+ARPButton.Font = Enum.Font.Gotham
+ARPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ARPButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ARPButton.Parent = MainFrame
+
+-- Autofarm
+local AutofarmButton = Instance.new("TextButton")
+AutofarmButton.Name = "AutofarmButton"
+AutofarmButton.Text = "AUTOFARM: OFF"
+AutofarmButton.Size = UDim2.new(0.9, 0, 0, 30)
+AutofarmButton.Position = UDim2.new(0.05, 0, 0.64, 0)
+AutofarmButton.Font = Enum.Font.GothamBold
+AutofarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutofarmButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+AutofarmButton.Parent = MainFrame
+
+-- Delay controls
+local DelayLabel = Instance.new("TextLabel")
+DelayLabel.Name = "DelayLabel"
+DelayLabel.Text = "DELAY (sec):"
+DelayLabel.Size = UDim2.new(0.3, 0, 0, 20)
+DelayLabel.Position = UDim2.new(0.05, 0, 0.69, 0)
+DelayLabel.Font = Enum.Font.Gotham
+DelayLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+DelayLabel.BackgroundTransparency = 1
+DelayLabel.TextXAlignment = Enum.TextXAlignment.Left
+DelayLabel.Parent = MainFrame
+
+local DelayTextBox = Instance.new("TextBox")
+DelayTextBox.Name = "DelayInput"
+DelayTextBox.Text = "0.01"
+DelayTextBox.Size = UDim2.new(0.25, 0, 0, 20)
+DelayTextBox.Position = UDim2.new(0.35, 0, 0.69, 0)
+DelayTextBox.Font = Enum.Font.Gotham
+DelayTextBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+DelayTextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+DelayTextBox.Parent = MainFrame
+
+-- Burst controls
+local BurstLabel = Instance.new("TextLabel")
+BurstLabel.Name = "BurstLabel"
+BurstLabel.Text = "BURSTS:"
+BurstLabel.Size = UDim2.new(0.3, 0, 0, 20)
+BurstLabel.Position = UDim2.new(0.05, 0, 0.72, 0)
+BurstLabel.Font = Enum.Font.Gotham
+BurstLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+BurstLabel.BackgroundTransparency = 1
+BurstLabel.TextXAlignment = Enum.TextXAlignment.Left
+BurstLabel.Parent = MainFrame
+
+local BurstTextBox = Instance.new("TextBox")
+BurstTextBox.Name = "BurstInput"
+BurstTextBox.Text = "1"
+BurstTextBox.Size = UDim2.new(0.25, 0, 0, 20)
+BurstTextBox.Position = UDim2.new(0.35, 0, 0.72, 0)
+BurstTextBox.Font = Enum.Font.Gotham
+BurstTextBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+BurstTextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+BurstTextBox.Parent = MainFrame
+
+-- Apply buttons
+local ApplyDelayButton = Instance.new("TextButton")
+ApplyDelayButton.Name = "ApplyDelay"
+ApplyDelayButton.Text = "APPLY DELAY"
+ApplyDelayButton.Size = UDim2.new(0.25, 0, 0, 20)
+ApplyDelayButton.Position = UDim2.new(0.65, 0, 0.69, 0)
+ApplyDelayButton.Font = Enum.Font.Gotham
+ApplyDelayButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ApplyDelayButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ApplyDelayButton.Parent = MainFrame
+
+local ApplyBurstButton = Instance.new("TextButton")
+ApplyBurstButton.Name = "ApplyBurst"
+ApplyBurstButton.Text = "APPLY BURST"
+ApplyBurstButton.Size = UDim2.new(0.25, 0, 0, 20)
+ApplyBurstButton.Position = UDim2.new(0.65, 0, 0.72, 0)
+ApplyBurstButton.Font = Enum.Font.Gotham
+ApplyBurstButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ApplyBurstButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+ApplyBurstButton.Parent = MainFrame
+
+-- Speed GUI Button
+local SpeedGUIButton = Instance.new("TextButton")
+SpeedGUIButton.Name = "SpeedGUIButton"
+SpeedGUIButton.Text = "SPEED GUI"
+SpeedGUIButton.Size = UDim2.new(0.9, 0, 0, 35)
+SpeedGUIButton.Position = UDim2.new(0.05, 0, 0.77, 0)
+SpeedGUIButton.Font = Enum.Font.GothamBold
+SpeedGUIButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedGUIButton.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+SpeedGUIButton.Parent = MainFrame
+
+-- Close button
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Text = "CLOSE"
+CloseButton.Size = UDim2.new(0.9, 0, 0, 35)
+CloseButton.Position = UDim2.new(0.05, 0, 0.82, 0)
+CloseButton.Font = Enum.Font.Gotham
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+CloseButton.Parent = MainFrame
+
+-- ===== DRAGGING SYSTEM =====
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(
+        startPos.X.Scale, 
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale, 
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+-- ===== MAIN FUNCTIONALITY =====
+local running = false
+local autofarmRunning = false
+local remoteEarned = 0
+local autofarmEarned = 0
+local startTime = os.time()
+local currentDelay = 0.01
+local burstAmount = 1
+local rewardRemote = game:GetService("ReplicatedStorage"):FindFirstChild("Reward") or
+                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Reward")
+
+-- Delivery Positions
+local pickupPos = Vector3.new(754.87, 3.82, -635.64)
+local deliverPos = Vector3.new(694.45, 3.70, -664.54)
+
+local function updateTotalMoney()
+    local total = remoteEarned + autofarmEarned
+    TotalMoneyLabel.Text = "TOTAL MONEY EARNED: $"..formatNumber(total)
+end
+
+local function updateTimer()
+    while true do
+        local elapsed = os.time() - startTime
+        TimeLabel.Text = "TIME USING SCRIPT: "..formatTime(elapsed)
+        task.wait(1)
+    end
+end
+
+local function generateMoney()
+    while running do
+        for i = 1, burstAmount do
+            local args = {[1] = "8000$"}
+            
+            local success, err = pcall(function()
+                rewardRemote:FireServer(unpack(args))
+                remoteEarned = remoteEarned + 8000
+                RemoteMoneyLabel.Text = "MONEY FROM REMOTES: $"..formatNumber(remoteEarned)
+                updateTotalMoney()
+            end)
+            
+            if not success then
+                StatusLabel.Text = "STATUS: ERROR - "..tostring(err)
+                running = false
+                return
+            end
+        end
+        task.wait(currentDelay)
+    end
+end
+
+local function spawnGlock()
+    local args = {[1] = "Glock 23"}
+    local success, err = pcall(function()
+        rewardRemote:FireServer(unpack(args))
+        StatusLabel.Text = "STATUS: SPAWNED GLOCK 23"
+    end)
+    if not success then StatusLabel.Text = "ERROR: "..tostring(err) end
+end
+
+local function spawnARP()
+    local args = {[1] = "Ar Pistol"}
+    local success, err = pcall(function()
+        rewardRemote:FireServer(unpack(args))
+        StatusLabel.Text = "STATUS: SPAWNED MICRO ARP"
+    end)
+    if not success then StatusLabel.Text = "ERROR: "..tostring(err) end
+end
+
+-- Speed GUI Function
+local function loadSpeedGUI()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Universal-Speed-GUI-22083"))()
+        StatusLabel.Text = "STATUS: LOADED SPEED GUI"
+    end)
+    
+    if not success then
+        StatusLabel.Text = "ERROR LOADING SPEED GUI: "..tostring(err)
+    end
+end
+
+-- Autofarm Functions
+local function teleportTo(pos)
+    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        Player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+    end
+end
+
+local function pressE()
+    VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.05)
+    VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+local function runDeliveryCycle()
+    for i = 1, 10 do
+        if not autofarmRunning then break end
+        
+        teleportTo(pickupPos)
+        task.wait(0.1)
+        pressE()
+        
+        teleportTo(deliverPos)
+        autofarmEarned = autofarmEarned + 100
+        AutofarmMoneyLabel.Text = "MONEY FROM AUTOFARM: $"..formatNumber(autofarmEarned)
+        updateTotalMoney()
+        task.wait(0.1)
+        
+        if i < 10 then task.wait(0.3) end
+    end
+end
+
+local function runAutofarm()
+    while autofarmRunning do
+        runDeliveryCycle()
+        if autofarmRunning then task.wait(5) end
+    end
+end
+
+-- Button Connections
+StartButton.MouseButton1Click:Connect(function()
+    if not running then
+        running = true
+        StatusLabel.Text = "STATUS: RUNNING ("..burstAmount.."x bursts)"
+        task.spawn(generateMoney)
+    end
+end)
+
+StopButton.MouseButton1Click:Connect(function()
+    running = false
+    StatusLabel.Text = "STATUS: STOPPED"
+end)
+
+GlockButton.MouseButton1Click:Connect(spawnGlock)
+ARPButton.MouseButton1Click:Connect(spawnARP)
+
+SpeedGUIButton.MouseButton1Click:Connect(loadSpeedGUI)
+
+AutofarmButton.MouseButton1Click:Connect(function()
+    autofarmRunning = not autofarmRunning
+    if autofarmRunning then
+        AutofarmButton.Text = "AUTOFARM: ON"
+        AutofarmButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        StatusLabel.Text = "STATUS: AUTOFARM STARTED"
+        task.spawn(runAutofarm)
+    else
+        AutofarmButton.Text = "AUTOFARM: OFF"
+        AutofarmButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+        StatusLabel.Text = "STATUS: AUTOFARM STOPPED"
+    end
+end)
+
+ApplyDelayButton.MouseButton1Click:Connect(function()
+    local newDelay = tonumber(DelayTextBox.Text)
+    if newDelay and newDelay >= 0 then
+        currentDelay = newDelay
+        StatusLabel.Text = "DELAY SET: "..tostring(newDelay).."s"
+    else
+        StatusLabel.Text = "INVALID DELAY VALUE"
+    end
+end)
+
+ApplyBurstButton.MouseButton1Click:Connect(function()
+    local newBurst = tonumber(BurstTextBox.Text)
+    if newBurst and newBurst >= 1 then
+        burstAmount = math.floor(newBurst)
+        StatusLabel.Text = "BURST SET: "..burstAmount.." requests"
+    else
+        StatusLabel.Text = "INVALID BURST VALUE (min 1)"
+    end
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Initialize
+task.spawn(updateTimer)
+
+Player.CharacterAdded:Connect(function()
+    if not ScreenGui.Parent then
+        ScreenGui.Parent = PlayerGui
+    end
+end)
+
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+    if autofarmRunning then
+        fireproximityprompt(prompt)
+    end
+end)
